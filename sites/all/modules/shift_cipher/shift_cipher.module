@@ -27,19 +27,19 @@
             '#required' => TRUE,
             '#element_validate' => array('shift_cipher_validate_phrase'),
         );
-        $form['shift_value'] = array(
-            '#title' => 'Shift Value',
-            '#type' => 'textfield',
-            '#description' => t('Input a number between 1 and 26 to shift your message by.'),
-            '#required' => TRUE,
-            '#element_validate' => array('shift_cipher_validate_range'),
-        );
         $form['direction'] = array(
             '#title' => 'Shift Direction',
             '#type' => 'textfield',
             '#description' => t('Enter a direction to shift your message (either "left" or "right").'),
             '#required' => TRUE,
             '#element_validate' => array('shift_cipher_validate_direction'),
+        );
+        $form['shift_value'] = array(
+            '#title' => 'Shift Value',
+            '#type' => 'textfield',
+            '#description' => t('Input a number between 1 and 26 to shift your message by.'),
+            '#required' => TRUE,
+            '#element_validate' => array('element_validate_integer_positive', 'shift_cipher_validate_range'),
         );
         $form['submit'] = array(
             '#type' => 'submit',
@@ -48,15 +48,79 @@
         return $form;
     }
 
+    function shift_cipher_validate_phrase($element) {
+
+    }
+
     function shift_cipher_validate_range($element) {
-        if($element['#value'] < 1 || $element['#value'] > 26) {
+        if($element['#value'] < 1 || $element['#value'] > 25) {
             form_error($element, t('Please enter a number between 1 and 26.'));
         }
     }
 
     function shift_cipher_validate_direction($element) {
         $valid_directions = ['left', 'right'];
-        if(!in_array(strtolower($element['#value']), $valid_directions)) {
+        $input = rtrim($element['#value'], " ");
+        if(!in_array(strtolower($input), $valid_directions)) {
             form_error($element, t('Please enter either "left" or "right".'));
         }
+    }
+
+    function shift_cipher_form_submit($form, &$form_state) {
+        /* Get input values from form */
+
+        $input_string = $form_state['values']['phrase'];
+        $shift_value = $form_state['values']['shift_value'];
+        $direction = $form_state['values']['direction'];
+
+        $alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+        $punctuation = ['!', '?', ',', '\'', '"',];
+
+        $input_string_array = explode(" ", strtolower($input_string));
+        $output_array = array();
+
+        foreach($input_string_array as $word) {
+            $output_word = "";
+
+            for($i = 0; $i < strlen($word); $i++) {
+                if(in_array($word[$i], $punctuation)) {
+                    $output_word .= $word[$i];
+                } else {
+                    $start_position = array_search($word[$i], $alphabet);
+
+                    if($direction === 'left') {
+                        $relative_position = $start_position - $shift_value;
+                        if($relative_position < 0) {
+                            $end_position = 26 + $relative_position;
+                            $shifted_letter = $alphabet[$end_position];
+                            $output_word .= $shifted_letter;
+                        } else {
+                            $shifted_letter = $alphabet[$relative_position];
+                            $output_word .= $shifted_letter;
+                        }
+                    } else {
+                        $relative_position = $start_position + $shift_value;
+                        if($relative_position > 25) {
+                            $end_position = abs(26 - $relative_position);
+                            $shifted_letter = $alphabet[$end_position];
+                            $output_word .= $shifted_letter;
+                        } else {
+                            $shifted_letter = $alphabet[$relative_position];
+                            $output_word .= $shifted_letter;
+                        }
+                    }
+                }
+            }
+            array_push($output_array, $output_word);
+        }
+
+        $_SESSION['encoded_string'] = implode(" ", $output_array);
+        $_SESSION['input_string'] = $input_string;
+        $form_state['redirect'] = 'shift_cipher_success_page';
+    }
+
+    function shift_cipher_success() {
+        $encoded_string = $_SESSION['encoded_string'];
+        $input_string = $_SESSION['input_string'];
+        return "Here is your encoded message: $encoded_string";
     }
