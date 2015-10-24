@@ -37,7 +37,7 @@
         $form['shift_value'] = array(
             '#title' => 'Shift Value',
             '#type' => 'textfield',
-            '#description' => t('Input a number between 1 and 26 to shift your message by.'),
+            '#description' => t('Input a number between 1 and 25 to shift your message by.'),
             '#required' => TRUE,
             '#element_validate' => array('element_validate_integer_positive', 'shift_cipher_validate_range'),
         );
