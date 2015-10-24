@@ -18,7 +18,7 @@
         return $items;
     }
 
-    //Input fields need to be shift value, direction, and phrase.
+    /* Creates shift_cipher input form */
     function shift_cipher_form() {
         $form['phrase'] = array(
             '#title' => 'Unencoded Phrase',
@@ -48,6 +48,7 @@
         return $form;
     }
 
+    /* Removes trailing whitespace and makes sure that inputted string only contains letters and approved punctuation */
     function shift_cipher_validate_phrase($element) {
         $input = rtrim($element['#value'], " ");
         if(!preg_match_all("/^[A-Za-z!?,.'\"]/", $input)) {
@@ -55,7 +56,7 @@
         }
     }
 
-
+    /* Removes trailing whitespace and makes sure that user has only entered "left" or "right" as direction */
     function shift_cipher_validate_direction($element) {
         $valid_directions = ['left', 'right'];
         $input = rtrim($element['#value'], " ");
@@ -64,6 +65,7 @@
         }
     }
 
+    /* Makes sure that the user inputted shift value is more than 0 and less than 26 (as those values would result in no shifting) */
     function shift_cipher_validate_range($element) {
         if($element['#value'] < 1 || $element['#value'] > 25) {
             form_error($element, t('Please enter a number between 1 and 25.'));
@@ -72,29 +74,32 @@
 
     function shift_cipher_form_submit($form, &$form_state) {
         /* Get input values from form */
-
         $input_string = $form_state['values']['phrase'];
         $shift_value = $form_state['values']['shift_value'];
         $direction = $form_state['values']['direction'];
 
         $alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
-        $punctuation = ['!', '?', ',', '\'', '"',];
+        $punctuation = ['!', '?', ',', '\'', '"', '.'];
 
+        /* Breaks input string into an array of words so we can handle each word individually */
         $input_string_array = explode(" ", strtolower($input_string));
         $output_array = array();
 
         foreach($input_string_array as $word) {
-            $output_word = "";
+            $output_word = ""; //Empty string to add result of letter shifting.
 
-            for($i = 0; $i < strlen($word); $i++) {
+            for($i = 0; $i < strlen($word); $i++) { //Loops through all letters in word
+                /* If current character is contained in the punctuation array declared above, add it to the output string. */
                 if(in_array($word[$i], $punctuation)) {
                     $output_word .= $word[$i];
                 } else {
+                    /* If current character is a letter, find the index position of the letter in the alphabet array, to serve as starting point. */
                     $start_position = array_search($word[$i], $alphabet);
 
                     if($direction === 'left') {
                         $relative_position = $start_position - $shift_value;
                         if($relative_position < 0) {
+                            /* If relative_position is less than zero, this converts that negative value into a usable index by adding said negative value to 26. (e.g. "a" has an index of 0.  If we shift left one, 0 - 1 = -1, 26 + -1 = 25, meaning the encoded letter is the letter at $alphabet[25], which is "z".) Then we add that new letter to the $output_word string. */
                             $end_position = 26 + $relative_position;
                             $shifted_letter = $alphabet[$end_position];
                             $output_word .= $shifted_letter;
@@ -103,8 +108,10 @@
                             $output_word .= $shifted_letter;
                         }
                     } else {
+                        /* If we're shifting to the right, we add the $shift_value to our original $start_position. */
                         $relative_position = $start_position + $shift_value;
                         if($relative_position > 25) {
+                            /* If $relative_position is larger than 25, we convert that to a usable index by setting the $end_position to the absolute value of 26 - $relative_position, i.e. how far past the 0th index we need to shift.  In our "looped" array, the "26th" index is the same as the 0th index. (e.g. "z" has an index of 25.  If we shift to the right by 4: 25 + 4 = 29; 26 - 29 = -3; the absolute value of -3 is 3.  The encoded letter = $alphabet[3], or "d".) */
                             $end_position = abs(26 - $relative_position);
                             $shifted_letter = $alphabet[$end_position];
                             $output_word .= $shifted_letter;
@@ -115,16 +122,16 @@
                     }
                 }
             }
+            /* Adds each encoded word to an array before moving on to the next and repeating the shift encoding process */
             array_push($output_array, $output_word);
         }
 
+        /* Turns the encoded $output_array into a string. */
         $_SESSION['encoded_string'] = implode(" ", $output_array);
-        $_SESSION['input_string'] = $input_string;
         $form_state['redirect'] = 'shift_cipher_success_page';
     }
 
     function shift_cipher_success() {
         $encoded_string = $_SESSION['encoded_string'];
-        $input_string = $_SESSION['input_string'];
         return "Here is your encoded message: $encoded_string";
     }
