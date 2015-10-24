@@ -1,0 +1,62 @@
+<?php
+
+    function shift_cipher_menu() {
+        $items = array();
+        $items['shift_cipher'] = array(
+            'title' => 'Shift Cipher',
+            'page callback' => 'drupal_get_form',
+            'page arguments' => array('shift_cipher_form'),
+            'access callback' => TRUE,
+            'type' => MENU_NORMAL_ITEM,
+        );
+        $items['shift_cipher_success_page'] = array(
+            'title' => 'Encoded Message',
+            'page callback' => 'shift_cipher_success',
+            'access callback' => TRUE,
+            'type' => MENU_CALLBACK,
+        );
+        return $items;
+    }
+
+    //Input fields need to be shift value, direction, and phrase.
+    function shift_cipher_form() {
+        $form['phrase'] = array(
+            '#title' => 'Unencoded Phrase',
+            '#type' => 'textfield',
+            '#description' => t('Enter a phrase to be encoded.'),
+            '#required' => TRUE,
+            '#element_validate' => array('shift_cipher_validate_phrase'),
+        );
+        $form['shift_value'] = array(
+            '#title' => 'Shift Value',
+            '#type' => 'textfield',
+            '#description' => t('Input a number between 1 and 26 to shift your message by.'),
+            '#required' => TRUE,
+            '#element_validate' => array('shift_cipher_validate_range'),
+        );
+        $form['direction'] = array(
+            '#title' => 'Shift Direction',
+            '#type' => 'textfield',
+            '#description' => t('Enter a direction to shift your message (either "left" or "right").'),
+            '#required' => TRUE,
+            '#element_validate' => array('shift_cipher_validate_direction'),
+        );
+        $form['submit'] = array(
+            '#type' => 'submit',
+            '#value' => 'Encode',
+        );
+        return $form;
+    }
+
+    function shift_cipher_validate_range($element) {
+        if($element['#value'] < 1 || $element['#value'] > 26) {
+            form_error($element, t('Please enter a number between 1 and 26.'));
+        }
+    }
+
+    function shift_cipher_validate_direction($element) {
+        $valid_directions = ['left', 'right'];
+        if(!in_array(strtolower($element['#value']), $valid_directions)) {
+            form_error($element, t('Please enter either "left" or "right".'));
+        }
+    }

@@ -1,0 +1,5 @@
+name = Shift Cipher
+description = Encode your communications so you can send seret messages!
+package = Spy Modules
+core = 7.x
+files[] = shift_cipher.module
