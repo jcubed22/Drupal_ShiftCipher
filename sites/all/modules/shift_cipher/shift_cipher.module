@@ -49,20 +49,24 @@
     }
 
     function shift_cipher_validate_phrase($element) {
-
-    }
-
-    function shift_cipher_validate_range($element) {
-        if($element['#value'] < 1 || $element['#value'] > 25) {
-            form_error($element, t('Please enter a number between 1 and 26.'));
+        $input = rtrim($element['#value'], " ");
+        if(!preg_match_all("/^[A-Za-z!?,.'\"]/", $input)) {
+            form_error($element, t('Please enter a valid phrase containing only letters, spaces, and the following punctuation: ? ! , . \' "'));
         }
     }
+
 
     function shift_cipher_validate_direction($element) {
         $valid_directions = ['left', 'right'];
         $input = rtrim($element['#value'], " ");
         if(!in_array(strtolower($input), $valid_directions)) {
             form_error($element, t('Please enter either "left" or "right".'));
+        }
+    }
+
+    function shift_cipher_validate_range($element) {
+        if($element['#value'] < 1 || $element['#value'] > 25) {
+            form_error($element, t('Please enter a number between 1 and 25.'));
         }
     }
 
